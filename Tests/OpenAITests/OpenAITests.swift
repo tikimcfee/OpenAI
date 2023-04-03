@@ -60,6 +60,6 @@ final class OpenAITests: XCTestCase {
             .init(role: .user, content: "Who wrote Harry Potter?")
         ])
         let result = try await openAI.chats(query: query)
-        XCTAssertFalse(result.choices.isEmpty)
+        XCTAssertTrue(result.choices?.isEmpty == false)
     }
 }

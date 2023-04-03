@@ -17,7 +17,7 @@ final public class OpenAI {
         case emptyData
     }
 
-    private let apiToken: String
+    public var apiToken: String
     private let session = URLSession.shared
 
     public init(apiToken: String) {
@@ -67,10 +67,10 @@ public extension OpenAI {
             public let index: Int
         }
 
-        public let id: String
-        public let object: String
-        public let created: TimeInterval
-        public let model: Model
+        public let id: String?
+        public let object: String?
+        public let created: TimeInterval?
+        public let model: Model?
         public let choices: [Choice]
     }
 
@@ -101,7 +101,7 @@ public extension OpenAI {
         public struct URLResult: Codable {
             public let url: String
         }
-        public let created: TimeInterval
+        public let created: TimeInterval?
         public let data: [URLResult]
     }
 
@@ -128,7 +128,7 @@ public extension OpenAI {
     struct EmbeddingsResult: Codable {
 
         public struct Embedding: Codable {
-            public let object: String
+            public let object: String?
             public let embedding: [Double]
             public let index: Int
         }
@@ -143,7 +143,7 @@ public extension OpenAI {
 ///MARK: - Chat
 public extension OpenAI {
     
-    struct Chat: Codable {
+    struct Chat: Codable, Equatable, Hashable {
         public let role: String
         public let content: String
         
@@ -163,7 +163,7 @@ public extension OpenAI {
         }
     }
     
-    struct ChatQuery: Codable {
+    struct ChatQuery: Codable, Equatable, Hashable {
         /// ID of the model to use. Currently, only gpt-3.5-turbo and gpt-3.5-turbo-0301 are supported.
         public let model: Model
         /// The messages to generate chat completions for
@@ -207,25 +207,25 @@ public extension OpenAI {
     }
     
     
-    struct ChatResult: Codable {
-        public struct Choice: Codable {
+    struct ChatResult: Codable, Equatable, Hashable {
+        public struct Choice: Codable, Equatable, Hashable {
             public let index: Int
             public let message: Chat
             public let finish_reason: String
         }
         
-        public struct Usage: Codable {
+        public struct Usage: Codable, Equatable, Hashable {
             public let prompt_tokens: Int
             public let completion_tokens: Int
             public let total_tokens: Int
         }
 
-        public let id: String
-        public let object: String
-        public let created: TimeInterval
-        public let model: Model
-        public let choices: [Choice]
-        public let usage: Usage
+        public let id: String?
+        public let object: String?
+        public let created: TimeInterval?
+        public let model: Model?
+        public let choices: [Choice]?
+        public let usage: Usage?
     }
     
     func chats(query: ChatQuery, timeoutInterval: TimeInterval = 60.0, completion: @escaping (Result<ChatResult, Error>) -> Void) {
@@ -240,7 +240,7 @@ internal extension OpenAI {
     func performRequest<ResultType: Codable>(request: Request<ResultType>, completion: @escaping (Result<ResultType, Error>) -> Void) {
         do {
             let request = try makeRequest(query: request.body, url: request.url, timeoutInterval: request.timeoutInterval)
-            let task = session.dataTask(with: request) { data, _, error in
+            let task = session.dataTask(with: request) { data, response, error in
                 if let error = error {
                     completion(.failure(error))
                     return
@@ -250,6 +250,10 @@ internal extension OpenAI {
                     return
                 }
                 do {
+                    if let message = String(data: data, encoding: .utf8) {
+                        print(message)
+                    }
+                    
                     let decoded = try JSONDecoder().decode(ResultType.self, from: data)
                     completion(.success(decoded))
                 } catch {
