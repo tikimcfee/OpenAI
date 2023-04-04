@@ -18,6 +18,9 @@ This repositorty contains Swift implementation over [OpenAI](https://beta.openai
     - [Completions](#completions)
     - [Chats](#chats)
     - [Images](#images)
+    - [Audio](#audio)
+        - [Audio Transcriptions](#audio-transcriptions)
+        - [Audio Translations](#audio-translations)
     - [Embeddings](#embeddings)
     - [Models](#models)
     - [Utilities](#utilities)
@@ -56,6 +59,13 @@ Once you have a token, you can initialize `OpenAI` class, which is an entry poin
 let openAI = OpenAI(apiToken: "YOUR_TOKEN_HERE")
 ```
 
+Optionally you can initialize `OpenAI` with token, organization identifier and timeoutInterval.
+
+```swift
+let configuration = OpenAI.Configuration(token: "YOUR_TOKEN_HERE", organizationIdentifier: "YOUR_ORGANIZATION_ID_HERE", timeoutInterval: 60.0)
+let openAI = OpenAI(configuration: configuration)
+```
+
 Once token you posses the token, and the instance is initialized you are ready to make requests.
 
 ### Completions
@@ -73,13 +83,13 @@ struct CompletionsQuery: Codable {
     /// What sampling temperature to use. Higher values means the model will take more risks. Try 0.9 for more creative applications, and 0 (argmax sampling) for ones with a well-defined answer.
     public let temperature: Double?
     /// The maximum number of tokens to generate in the completion.
-    public let max_tokens: Int?
+    public let maxTokens: Int?
     /// An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
-    public let top_p: Double?
+    public let topP: Double?
     /// Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
-    public let frequency_penalty: Double?
+    public let frequencyPenalty: Double?
     /// Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
-    public let presence_penalty: Double?
+    public let presencePenalty: Double?
     /// Up to 4 sequences where the API will stop generating further tokens. The returned text will not contain the stop sequence.
     public let stop: [String]?
     /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
@@ -106,7 +116,7 @@ struct CompletionsResult: Codable {
 **Example**
 
 ```swift
-let query = OpenAI.CompletionsQuery(model: .textDavinci_003, prompt: "What is 42?", temperature: 0, max_tokens: 100, top_p: 1, frequency_penalty: 0, presence_penalty: 0, stop: ["\\n"])
+let query = CompletionsQuery(model: .textDavinci_003, prompt: "What is 42?", temperature: 0, max_tokens: 100, top_p: 1, frequency_penalty: 0, presence_penalty: 0, stop: ["\\n"])
 openAI.completions(query: query) { result in
   //Handle result here
 }
@@ -153,7 +163,7 @@ Using the OpenAI Chat API, you can build your own applications with `gpt-3.5-tur
      /// What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and  We generally recommend altering this or top_p but not both.
      public let temperature: Double?
      /// An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
-     public let top_p: Double?
+     public let topP: Double?
      /// How many chat completion choices to generate for each input message.
      public let n: Int?
      /// If set, partial message deltas will be sent, like in ChatGPT. Tokens will be sent as data-only `server-sent events` as they become available, with the stream terminated by a data: [DONE] message.
@@ -161,13 +171,13 @@ Using the OpenAI Chat API, you can build your own applications with `gpt-3.5-tur
      /// Up to 4 sequences where the API will stop generating further tokens. The returned text will not contain the stop sequence.
      public let stop: [String]?
      /// The maximum number of tokens to generate in the completion.
-     public let max_tokens: Int?
+     public let maxTokens: Int?
      /// Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
-     public let presence_penalty: Double?
+     public let presencePenalty: Double?
      /// Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
-     public let frequency_penalty: Double?
+     public let frequencyPenalty: Double?
      ///Modify the likelihood of specified tokens appearing in the completion.
-     public let logit_bias: [String:Int]?
+     public let logitBias: [String:Int]?
      /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
      public let user: String?
 ```
@@ -179,15 +189,15 @@ struct ChatResult: Codable {
     public struct Choice: Codable {
         public let index: Int
         public let message: Chat
-        public let finish_reason: String
+        public let finishReason: String
     }
     
     public struct Usage: Codable {
-        public let prompt_tokens: Int
-        public let completion_tokens: Int
-        public let total_tokens: Int
+        public let promptTokens: Int
+        public let completionTokens: Int
+        public let totalTokens: Int
     }
-
+    
     public let id: String
     public let object: String
     public let created: TimeInterval
@@ -200,7 +210,7 @@ struct ChatResult: Codable {
 **Example**
 
 ```swift
-let query = OpenAI.ChatQuery(model: .gpt3_5Turbo, messages: [.init(role: "user", content: "who are you")])
+let query = ChatQuery(model: .gpt3_5Turbo, messages: [.init(role: "user", content: "who are you")])
 let result = try await openAI.chats(query: query)
 ```
 
@@ -259,7 +269,7 @@ struct ImagesResult: Codable {
 **Example**
 
 ```swift
-let query = OpenAI.ImagesQuery(prompt: "White cat with heterochromia sitting on the kitchen table", n: 1, size: "1024x1024")
+let query = ImagesQuery(prompt: "White cat with heterochromia sitting on the kitchen table", n: 1, size: "1024x1024")
 openAI.images(query: query) { result in
   //Handle result here
 }
@@ -281,6 +291,98 @@ let result = try await openAI.images(query: query)
 ![Generated Image](https://user-images.githubusercontent.com/1411778/213134082-ba988a72-fca0-4213-8805-63e5f8324cab.png)
 
 Review [Images Documentation](https://beta.openai.com/docs/api-reference/images) for more info.
+
+### Audio
+
+The speech to text API provides two endpoints, transcriptions and translations, based on our state-of-the-art open source large-v2 [Whisper model](https://openai.com/research/whisper). They can be used to:
+
+Transcribe audio into whatever language the audio is in.
+Translate and transcribe the audio into english.
+File uploads are currently limited to 25 MB and the following input file types are supported: mp3, mp4, mpeg, mpga, m4a, wav, and webm.
+
+#### Audio Transcriptions
+
+Transcribes audio into the input language.
+
+**Request**
+
+```swift
+public struct AudioTranscriptionQuery: Codable, Equatable {
+    
+    public let file: Data
+    public let fileName: String
+    public let model: Model
+    
+    public let prompt: String?
+    public let temperature: Double?
+    public let language: String?
+}
+```
+
+**Response**
+
+```swift
+public struct AudioTranscriptionResult: Codable, Equatable {
+    
+    public let text: String
+}
+```
+
+**Example**
+
+```swift
+let data = Data(contentsOfURL:...)
+let query = AudioTranscriptionQuery(file: data, fileName: "audio.m4a", model: .whisper_1)        
+
+openAI.audioTranscriptions(query: query) { result in
+    //Handle result here
+}
+//or
+let result = try await openAI.audioTranscriptions(query: query)
+```
+
+#### Audio Translations
+
+Translates audio into into English.
+
+**Request**
+
+```swift
+public struct AudioTranslationQuery: Codable, Equatable {
+    
+    public let file: Data
+    public let fileName: String
+    public let model: Model
+    
+    public let prompt: String?
+    public let temperature: Double?
+}    
+```
+
+**Response**
+
+```swift
+public struct AudioTranslationResult: Codable, Equatable {
+    
+    public let text: String
+}
+```
+
+**Example**
+
+```swift
+let data = Data(contentsOfURL:...)
+let query = AudioTranslationQuery(file: data, fileName: "audio.m4a", model: .whisper_1)  
+
+openAI.audioTranslations(query: query) { result in
+    //Handle result here
+}
+//or
+let result = try await openAI.audioTranslations(query: query)
+```
+
+Review [Audio Documentation](https://platform.openai.com/docs/api-reference/audio) for more info.
+
 
 ### Embeddings
 
@@ -315,7 +417,7 @@ struct EmbeddingsResult: Codable {
 **Example**
 
 ```swift
-let query = OpenAI.EmbeddingsQuery(model: .textSearchBabbadgeDoc, input: "The food was delicious and the waiter...")
+let query = EmbeddingsQuery(model: .textSearchBabbadgeDoc, input: "The food was delicious and the waiter...")
 openAI.embeddings(query: query) { result in
   //Handle response here
 }
@@ -365,7 +467,7 @@ public extension Model {
     static let gpt3_5Turbo0301 = "gpt-3.5-turbo-0301"
     
     static let gpt4 = "gpt-4"
-    static let gpt4_0134 = "gpt-4-0314"
+    static let gpt4_0314 = "gpt-4-0314"
     static let gpt4_32k = "gpt-4-32k"
     static let gpt4_32k_0314 = "gpt-4-32k-0314"
 }
@@ -376,7 +478,7 @@ GPT-4 models are supported.
 For example to use basic GPT-4 8K model pass `.gpt4` as a paramter.
 
 ```swift
-let query = OpenAI.ChatQuery(model: .gpt4, messages: [
+let query = ChatQuery(model: .gpt4, messages: [
     .init(role: .system, content: "You are Librarian-GPT. You know everything about the books."),
     .init(role: .user, content: "Who wrote Harry Potter?")
 ])
