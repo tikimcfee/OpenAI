@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Chat: Codable, Equatable {
+public struct Chat: Codable, Equatable, Hashable {
     public let role: String
     public let content: String
     
