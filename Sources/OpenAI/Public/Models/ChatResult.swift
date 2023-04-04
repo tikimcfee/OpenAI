@@ -7,9 +7,9 @@
 
 import Foundation
 
-public struct ChatResult: Codable, Equatable {
+public struct ChatResult: Codable, Equatable, Hashable {
     
-    public struct Choice: Codable, Equatable {
+    public struct Choice: Codable, Equatable, Hashable {
         public let index: Int
         public let message: Chat
         public let finishReason: String
@@ -21,7 +21,7 @@ public struct ChatResult: Codable, Equatable {
         }
     }
     
-    public struct Usage: Codable, Equatable {
+    public struct Usage: Codable, Equatable, Hashable {
         public let promptTokens: Int
         public let completionTokens: Int
         public let totalTokens: Int
