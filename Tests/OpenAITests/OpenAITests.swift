@@ -1,3 +1,10 @@
+//
+//  OpenAITests.swift
+//
+//
+//  Created by Sergii Kryvoblotskyi on 18/01/2023.
+//
+
 import XCTest
 @testable import OpenAI
 
@@ -20,7 +27,7 @@ class OpenAITests: XCTestCase {
         let query = CompletionsQuery(model: .textDavinci_003, prompt: "What is 42?", temperature: 0, maxTokens: 100, topP: 1, frequencyPenalty: 0, presencePenalty: 0, stop: ["\\n"])
         let expectedResult = CompletionsResult(id: "foo", object: "bar", created: 100500, model: .babbage, choices: [
             .init(text: "42 is the answer to everything", index: 0)
-        ])
+        ], usage: .init(promptTokens: 10, completionTokens: 10, totalTokens: 20))
         try self.stub(result: expectedResult)
         
         let result = try await openAI.completions(query: query)
@@ -89,7 +96,7 @@ class OpenAITests: XCTestCase {
             .init(object: "id-sdasd", embedding: [0.1, 0.2, 0.3, 0.4], index: 0),
             .init(object: "id-sdasd1", embedding: [0.4, 0.1, 0.7, 0.1], index: 1),
             .init(object: "id-sdasd2", embedding: [0.8, 0.1, 0.2, 0.8], index: 2)
-        ])
+        ], usage: .init(promptTokens: 10, totalTokens: 10))
         try self.stub(result: embeddingsResult)
         
         let result = try await openAI.embeddings(query: query)
@@ -105,7 +112,53 @@ class OpenAITests: XCTestCase {
         XCTAssertEqual(inError, apiError)
     }
     
-    func testAudioTransriptions() async throws {
+    func testQueryString() throws {
+        let pathParameter = APIPath.gpt4
+        let result = APIPath.models.withPath(pathParameter)
+        XCTAssertEqual(result, APIPath.models + "/" + pathParameter)
+    }
+    
+    func testRetrieveModel() async throws {
+        let query = ModelQuery(model: .gpt4)
+        let modelResult = ModelResult(id: .gpt4, object: "model", ownedBy: "organization-owner")
+        try self.stub(result: modelResult)
+        
+        let result = try await openAI.model(query: query)
+        XCTAssertEqual(result, modelResult)
+    }
+    
+    func testRetrieveModelError() async throws {
+        let query = ModelQuery(model: .gpt4)
+        let inError = APIError(message: "foo", type: "bar", param: "baz", code: "100")
+        self.stub(error: inError)
+        
+        let apiError: APIError = try await XCTExpectError { try await openAI.model(query: query) }
+        XCTAssertEqual(inError, apiError)
+    }
+    
+    func testListModels() async throws {
+        let query = ModelsQuery()
+        let listModelsResult = ModelsResult(data: [
+            .init(id: "model-id-0", object: "model", ownedBy: "organization-owner"),
+            .init(id: "model-id-1", object: "model", ownedBy: "organization-owner"),
+            .init(id: "model-id-2", object: "model", ownedBy: "openai")
+        ], object: "list")
+        try self.stub(result: listModelsResult)
+        
+        let result = try await openAI.models(query: query)
+        XCTAssertEqual(result, listModelsResult)
+    }
+    
+    func testListModelsError() async throws {
+        let query = ModelsQuery()
+        let inError = APIError(message: "foo", type: "bar", param: "baz", code: "100")
+        self.stub(error: inError)
+        
+        let apiError: APIError = try await XCTExpectError { try await openAI.models(query: query) }
+        XCTAssertEqual(inError, apiError)
+    }
+    
+    func testAudioTranscriptions() async throws {
         let data = Data()
         let query = AudioTranscriptionQuery(file: data, fileName: "audio.m4a", model: .whisper_1)
         let transcriptionResult = AudioTranscriptionResult(text: "Hello, world!")
@@ -159,7 +212,7 @@ class OpenAITests: XCTestCase {
         XCTAssertEqual(similarity, 0.9510201910206734, accuracy: 0.000001)
     }
     
-    func testJSONReqestCreation() throws {
+    func testJSONRequestCreation() throws {
         let configuration = OpenAI.Configuration(token: "foo", organizationIdentifier: "bar", timeoutInterval: 14)
         let completionQuery = CompletionsQuery(model: .whisper_1, prompt: "how are you?")
         let jsonRequest = JSONRequest<CompletionsResult>(body: completionQuery, url: URL(string: "http://google.com")!)
@@ -171,7 +224,7 @@ class OpenAITests: XCTestCase {
         XCTAssertEqual(urlRequest.timeoutInterval, configuration.timeoutInterval)
     }
     
-    func testMultipartReqestCreation() throws {
+    func testMultipartRequestCreation() throws {
         let configuration = OpenAI.Configuration(token: "foo", organizationIdentifier: "bar", timeoutInterval: 14)
         let completionQuery = AudioTranslationQuery(file: Data(), fileName: "foo", model: .whisper_1)
         let jsonRequest = MultipartFormDataRequest<CompletionsResult>(body: completionQuery, url: URL(string: "http://google.com")!)
