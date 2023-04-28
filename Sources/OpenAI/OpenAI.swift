@@ -37,7 +37,7 @@ final public class OpenAI: OpenAIProtocol {
     private let session: URLSessionProtocol
     private var streamingSessions: [NSObject] = []
     
-    public let configuration: Configuration
+    public var configuration: Configuration
 
     public convenience init(apiToken: String) {
         self.init(configuration: Configuration(token: apiToken), session: URLSession.shared)
