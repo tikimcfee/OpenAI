@@ -7,11 +7,11 @@
 
 import Foundation
 
-public struct Chat: Codable, Equatable {
+public struct Chat: Codable, Equatable, Hashable {
     public let role: Role
     public let content: String
     
-    public enum Role: String, Codable, Equatable {
+    public enum Role: String, Codable, Equatable, Hashable {
         case system
         case assistant
         case user

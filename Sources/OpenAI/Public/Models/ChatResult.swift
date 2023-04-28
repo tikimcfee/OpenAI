@@ -7,10 +7,10 @@
 
 import Foundation
 
-public struct ChatResult: Codable, Equatable {
+public struct ChatResult: Codable, Equatable, Hashable {
     
-    public struct Choice: Codable, Equatable {
-        public struct Delta: Codable, Equatable {
+    public struct Choice: Codable, Equatable, Hashable{
+        public struct Delta: Codable, Equatable, Hashable {
             public let content: String?
             public let role: Chat.Role?
         }
@@ -31,7 +31,7 @@ public struct ChatResult: Codable, Equatable {
         }
     }
     
-    public struct Usage: Codable, Equatable {
+    public struct Usage: Codable, Equatable, Hashable {
         public let promptTokens: Int
         public let completionTokens: Int
         public let totalTokens: Int
