@@ -10,13 +10,23 @@ import Foundation
 public struct ChatResult: Codable, Equatable {
     
     public struct Choice: Codable, Equatable {
+        public struct Delta: Codable, Equatable {
+            public let content: String?
+            public let role: Chat.Role?
+        }
+        
         public let index: Int
-        public let message: Chat
-        public let finishReason: String
+        /// Exists only if it is a complete message.
+        public let message: Chat?
+        /// Exists only if it is a partial message obtained throught a streaming query.
+        public let delta: Delta?
+        /// Exists only if it is a complete message.
+        public let finishReason: String?
         
         enum CodingKeys: String, CodingKey {
             case index
             case message
+            case delta
             case finishReason = "finish_reason"
         }
     }
@@ -38,7 +48,7 @@ public struct ChatResult: Codable, Equatable {
     public let created: TimeInterval
     public let model: Model
     public let choices: [Choice]
-    public let usage: Usage
+    public let usage: Usage?
     
     enum CodingKeys: String, CodingKey {
         case id
