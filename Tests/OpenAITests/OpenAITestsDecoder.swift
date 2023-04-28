@@ -98,8 +98,33 @@ class OpenAITestsDecoder: XCTestCase {
         """
         
         let expectedValue = ChatResult(id: "chatcmpl-123", object: "chat.completion", created: 1677652288, model: .gpt4, choices: [
-            .init(index: 0, message: Chat(role: "assistant", content: "Hello, world!"), finishReason: "stop")
+            .init(index: 0, message: Chat(role: .assistant, content: "Hello, world!"), finishReason: "stop")
         ], usage: .init(promptTokens: 9, completionTokens: 12, totalTokens: 21))
+        try decode(data, expectedValue)
+    }
+    
+    func testEdits() async throws {
+        let data = """
+        {
+          "object": "edit",
+          "created": 1589478378,
+          "choices": [
+            {
+              "text": "What day of the week is it?",
+              "index": 0,
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 25,
+            "completion_tokens": 32,
+            "total_tokens": 57
+          }
+        }
+        """
+        
+        let expectedValue = EditsResult(object: "edit", created: 1589478378, choices: [
+            .init(text: "What day of the week is it?", index: 0)
+        ], usage: .init(promptTokens: 25, completionTokens: 32, totalTokens: 57))
         try decode(data, expectedValue)
     }
     
@@ -128,7 +153,7 @@ class OpenAITestsDecoder: XCTestCase {
         
         let expectedValue = EmbeddingsResult(data: [
             .init(object: "embedding", embedding: [0.0023064255, -0.009327292, -0.0028842222], index: 0)
-        ], usage: .init(promptTokens: 8, totalTokens: 8))
+        ], model: .textEmbeddingAda, usage: .init(promptTokens: 8, totalTokens: 8))
         try decode(data, expectedValue)
     }
     
@@ -174,6 +199,45 @@ class OpenAITestsDecoder: XCTestCase {
         """
         
         let expectedValue = ModelResult(id: .textDavinci_003, object: "model", ownedBy: "openai")
+        try decode(data, expectedValue)
+    }
+    
+    func testModerations() async throws {
+        let data = """
+        {
+          "id": "modr-5MWoLO",
+          "model": "text-moderation-001",
+          "results": [
+            {
+              "categories": {
+                "hate": false,
+                "hate/threatening": true,
+                "self-harm": false,
+                "sexual": false,
+                "sexual/minors": false,
+                "violence": true,
+                "violence/graphic": false
+              },
+              "category_scores": {
+                "hate": 0.22714105248451233,
+                "hate/threatening": 0.4132447838783264,
+                "self-harm": 0.00523239187896251,
+                "sexual": 0.01407341007143259,
+                "sexual/minors": 0.0038522258400917053,
+                "violence": 0.9223177433013916,
+                "violence/graphic": 0.036865197122097015
+              },
+              "flagged": true
+            }
+          ]
+        }
+        """
+        
+        let expectedValue = ModerationsResult(id: "modr-5MWoLO", model: .moderation, results: [
+            .init(categories: .init(hate: false, hateThreatening: true, selfHarm: false, sexual: false, sexualMinors: false, violence: true, violenceGraphic: false),
+                  categoryScores: .init(hate: 0.22714105248451233, hateThreatening: 0.4132447838783264, selfHarm: 0.00523239187896251, sexual: 0.01407341007143259, sexualMinors: 0.0038522258400917053, violence: 0.9223177433013916, violenceGraphic: 0.036865197122097015),
+                  flagged: true)
+        ])
         try decode(data, expectedValue)
     }
     

@@ -45,10 +45,14 @@ final public class OpenAI: OpenAIProtocol {
     public convenience init(configuration: Configuration) {
         self.init(configuration: configuration, session: URLSession.shared)
     }
-    
-    init(configuration: Configuration, session: URLSessionProtocol = URLSession.shared) {
+
+    init(configuration: Configuration, session: URLSessionProtocol) {
         self.configuration = configuration
         self.session = session
+    }
+
+    public convenience init(configuration: Configuration, session: URLSession = URLSession.shared) {
+        self.init(configuration: configuration, session: session as URLSessionProtocol)
     }
     
     public func completions(query: CompletionsQuery, completion: @escaping (Result<CompletionsResult, Error>) -> Void) {
@@ -67,12 +71,20 @@ final public class OpenAI: OpenAIProtocol {
         performRequest(request: JSONRequest<ChatResult>(body: query, url: buildURL(path: .chats)), completion: completion)
     }
     
-    public func model(query: ModelQuery, completion: @escaping (Result<ModelResult, Error>) -> Void) {
-        performRequest(request: JSONRequest<ModelResult>(body: query, url: buildURL(path: .models.withPath(query.model))), completion: completion)
+    public func edits(query: EditsQuery, completion: @escaping (Result<EditsResult, Error>) -> Void) {
+        performRequest(request: JSONRequest<EditsResult>(body: query, url: buildURL(path: .edits)), completion: completion)
     }
     
-    public func models(query: ModelsQuery, completion: @escaping (Result<ModelsResult, Error>) -> Void) {
-        performRequest(request: JSONRequest<ModelsResult>(body: query, url: buildURL(path: .models)), completion: completion)
+    public func model(query: ModelQuery, completion: @escaping (Result<ModelResult, Error>) -> Void) {
+        performRequest(request: JSONRequest<ModelResult>(url: buildURL(path: .models.withPath(query.model)), method: "GET"), completion: completion)
+    }
+    
+    public func models(completion: @escaping (Result<ModelsResult, Error>) -> Void) {
+        performRequest(request: JSONRequest<ModelsResult>(url: buildURL(path: .models), method: "GET"), completion: completion)
+    }
+    
+    public func moderations(query: ModerationsQuery, completion: @escaping (Result<ModerationsResult, Error>) -> Void) {
+        performRequest(request: JSONRequest<ModerationsResult>(body: query, url: buildURL(path: .moderations)), completion: completion)
     }
     
     public func audioTranscriptions(query: AudioTranscriptionQuery, completion: @escaping (Result<AudioTranscriptionResult, Error>) -> Void) {
@@ -142,7 +154,9 @@ extension APIPath {
     static let images = "/v1/images/generations"
     static let embeddings = "/v1/embeddings"
     static let chats = "/v1/chat/completions"
+    static let edits = "/v1/edits"
     static let models = "/v1/models"
+    static let moderations = "/v1/moderations"
     
     static let audioTranscriptions = "/v1/audio/transcriptions"
     static let audioTranslations = "/v1/audio/translations"

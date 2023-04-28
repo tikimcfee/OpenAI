@@ -48,7 +48,7 @@ public protocol OpenAIProtocol {
 
      Example:
      ```
-     let query = EmbeddingsQuery(model: .textSearchBabbadgeDoc, input: "The food was delicious and the waiter...")
+     let query = EmbeddingsQuery(model: .textSearchBabbageDoc, input: "The food was delicious and the waiter...")
      openAI.embeddings(query: query) { result in
        //Handle response here
      }
@@ -78,6 +78,23 @@ public protocol OpenAIProtocol {
     func chats(query: ChatQuery, completion: @escaping (Result<ChatResult, Error>) -> Void)
     
     /**
+     This function sends an edits query to the OpenAI API and retrieves an edited version of the prompt based on the instruction given.
+     
+     Example:
+     ```
+     let query = EditsQuery(model: .gpt4, input: "What day of the wek is it?", instruction: "Fix the spelling mistakes")
+     openAI.edits(query: query) { result in
+       //Handle response here
+     }
+     ```
+
+     - Parameters:
+       - query: An `EditsQuery` object containing the input parameters for the API request. This includes the input to be edited, the instruction specifying how it should be edited, and other settings.
+       - completion: A closure which receives the result when the API request finishes. The closure's parameter, `Result<EditsResult, Error>`, will contain either the `EditsResult` object with the model's response to the queried edit, or an error if the request failed.
+    **/
+    func edits(query: EditsQuery, completion: @escaping (Result<EditsResult, Error>) -> Void)
+    
+    /**
      This function sends a model query to the OpenAI API and retrieves a model instance, providing owner information. The Models API in this usage enables you to gather detailed information on the model in question, like GPT-3.
      
      Example:
@@ -99,17 +116,32 @@ public protocol OpenAIProtocol {
      
      Example:
      ```
-     let query = ModelsQuery()
-     openAI.models(query: query) { result in
+     openAI.models() { result in
        //Handle response here
      }
      ```
 
      - Parameters:
-       - query: A `ModelsQuery` object which currently does not require input parameters for the API request.
        - completion: A closure which receives the result when the API request finishes. The closure's parameter, `Result<ModelsResult, Error>`, will contain either the `ModelsResult` object with the list of model types, or an error if the request failed.
     **/
-    func models(query: ModelsQuery, completion: @escaping (Result<ModelsResult, Error>) -> Void)
+    func models(completion: @escaping (Result<ModelsResult, Error>) -> Void)
+    
+    /**
+     This function sends a moderations query to the OpenAI API and retrieves a list of category results to classify how text may violate OpenAI's Content Policy.
+     
+     Example:
+     ```
+     let query = ModerationsQuery(input: "I want to kill them.")
+     openAI.moderations(query: query) { result in
+       //Handle response here
+     }
+     ```
+
+     - Parameters:
+       - query: A `ModerationsQuery` object containing the input parameters for the API request. This includes the input text and optionally the model to be used.
+       - completion: A closure which receives the result when the API request finishes. The closure's parameter, `Result<ModerationsResult, Error>`, will contain either the `ModerationsResult` object with the list of category results, or an error if the request failed.
+    **/
+    func moderations(query: ModerationsQuery, completion: @escaping (Result<ModerationsResult, Error>) -> Void)
     
     /**
     Transcribes audio data using OpenAI's audio transcription API and completes the operation asynchronously.

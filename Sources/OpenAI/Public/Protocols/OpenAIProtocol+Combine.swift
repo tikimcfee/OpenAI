@@ -43,6 +43,13 @@ public extension OpenAIProtocol {
         .eraseToAnyPublisher()
     }
     
+    func edits(query: EditsQuery) -> AnyPublisher<EditsResult, Error> {
+        Future<EditsResult, Error> {
+            edits(query: query, completion: $0)
+        }
+        .eraseToAnyPublisher()
+    }
+    
     func model(query: ModelQuery) -> AnyPublisher<ModelResult, Error> {
         Future<ModelResult, Error> {
             model(query: query, completion: $0)
@@ -50,9 +57,16 @@ public extension OpenAIProtocol {
         .eraseToAnyPublisher()
     }
     
-    func models(query: ModelsQuery) -> AnyPublisher<ModelsResult, Error> {
+    func models() -> AnyPublisher<ModelsResult, Error> {
         Future<ModelsResult, Error> {
-            models(query: query, completion: $0)
+            models(completion: $0)
+        }
+        .eraseToAnyPublisher()
+    }
+    
+    func moderations(query: ModerationsQuery) -> AnyPublisher<ModerationsResult, Error> {
+        Future<ModerationsResult, Error> {
+            moderations(query: query, completion: $0)
         }
         .eraseToAnyPublisher()
     }

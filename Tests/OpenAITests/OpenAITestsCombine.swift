@@ -42,22 +42,32 @@ final class OpenAITestsCombine: XCTestCase {
            .init(role: .user, content: "Who wrote Harry Potter?")
        ])
        let chatResult = ChatResult(id: "id-12312", object: "foo", created: 100, model: .gpt3_5Turbo, choices: [
-           .init(index: 0, message: .init(role: "foo", content: "bar"), finishReason: "baz"),
-           .init(index: 0, message: .init(role: "foo1", content: "bar1"), finishReason: "baz1"),
-           .init(index: 0, message: .init(role: "foo2", content: "bar2"), finishReason: "baz2")
+        .init(index: 0, message: .init(role: .system, content: "bar"), finishReason: "baz"),
+        .init(index: 0, message: .init(role: .user, content: "bar1"), finishReason: "baz1"),
+        .init(index: 0, message: .init(role: .assistant, content: "bar2"), finishReason: "baz2")
         ], usage: .init(promptTokens: 100, completionTokens: 200, totalTokens: 300))
        try self.stub(result: chatResult)
        let result = try awaitPublisher(openAI.chats(query: query))
        XCTAssertEqual(result, chatResult)
     }
     
+    func testEdits() throws {
+        let query = EditsQuery(model: .gpt4, input: "What day of the wek is it?", instruction: "Fix the spelling mistakes")
+        let editsResult = EditsResult(object: "edit", created: 1589478378, choices: [
+            .init(text: "What day of the week is it?", index: 0)
+        ], usage: .init(promptTokens: 25, completionTokens: 32, totalTokens: 57))
+        try self.stub(result: editsResult)
+        let result = try awaitPublisher(openAI.edits(query: query))
+        XCTAssertEqual(result, editsResult)
+    }
+    
     func testEmbeddings() throws {
-        let query = EmbeddingsQuery(model: .textSearchBabbadgeDoc, input: "The food was delicious and the waiter...")
+        let query = EmbeddingsQuery(model: .textSearchBabbageDoc, input: "The food was delicious and the waiter...")
         let embeddingsResult = EmbeddingsResult(data: [
             .init(object: "id-sdasd", embedding: [0.1, 0.2, 0.3, 0.4], index: 0),
             .init(object: "id-sdasd1", embedding: [0.4, 0.1, 0.7, 0.1], index: 1),
             .init(object: "id-sdasd2", embedding: [0.8, 0.1, 0.2, 0.8], index: 2)
-        ], usage: .init(promptTokens: 10, totalTokens: 10))
+        ], model: .textSearchBabbageDoc, usage: .init(promptTokens: 10, totalTokens: 10))
         try self.stub(result: embeddingsResult)
         
         let result = try awaitPublisher(openAI.embeddings(query: query))
@@ -74,12 +84,24 @@ final class OpenAITestsCombine: XCTestCase {
     }
     
     func testListModels() throws {
-        let query = ModelsQuery()
         let listModelsResult = ModelsResult(data: [], object: "model")
         try self.stub(result: listModelsResult)
         
-        let result = try awaitPublisher(openAI.models(query: query))
+        let result = try awaitPublisher(openAI.models())
         XCTAssertEqual(result, listModelsResult)
+    }
+    
+    func testModerations() throws {
+        let query = ModerationsQuery(input: "Hello, world!")
+        let moderationsResult = ModerationsResult(id: "foo", model: .moderation, results: [
+            .init(categories: .init(hate: false, hateThreatening: false, selfHarm: false, sexual: false, sexualMinors: false, violence: false, violenceGraphic: false),
+                  categoryScores: .init(hate: 0.1, hateThreatening: 0.1, selfHarm: 0.1, sexual: 0.1, sexualMinors: 0.1, violence: 0.1, violenceGraphic: 0.1),
+                  flagged: false)
+        ])
+        try self.stub(result: moderationsResult)
+        
+        let result = try awaitPublisher(openAI.moderations(query: query))
+        XCTAssertEqual(result, moderationsResult)
     }
     
     func testAudioTranscriptions() throws {

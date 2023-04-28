@@ -9,7 +9,7 @@ ___
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FMacPaw%2FOpenAI%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/MacPaw/OpenAI)
 [![Twitter](https://img.shields.io/static/v1?label=Twitter&message=@MacPaw&color=CA1F67)](https://twitter.com/MacPaw)
 
-This repository contains Swift implementation over [OpenAI](https://platform.openai.com/docs/api-reference/) public API.
+This repository contains Swift community-maintained implementation over [OpenAI](https://platform.openai.com/docs/api-reference/) public API. 
 
 - [What is OpenAI](#what-is-openai)
 - [Installation](#installation)
@@ -21,11 +21,15 @@ This repository contains Swift implementation over [OpenAI](https://platform.ope
     - [Audio](#audio)
         - [Audio Transcriptions](#audio-transcriptions)
         - [Audio Translations](#audio-translations)
+    - [Edits](#edits)
     - [Embeddings](#embeddings)
     - [Models](#models)
         - [List Models](#list-models)
         - [Retrieve Model](#retrieve-model)
+    - [Moderations](#moderations)
     - [Utilities](#utilities)
+    - [Combine Extensions](#combine-extensions)
+- [Example Project](#example-project)
 - [Links](#links)
 - [License](#license)
 
@@ -52,6 +56,8 @@ dependencies: [
 ### Initialization
 
 To initialize API instance you need to [obtain](https://platform.openai.com/account/api-keys) API token from your Open AI organization.
+
+**Remember that your API key is a secret!** Do not share it with others or expose it in any client-side code (browsers, apps). Production requests must be routed through your own backend server where your API key can be securely loaded from an environment variable or key management service.
 
 <img width="1081" alt="company" src="https://user-images.githubusercontent.com/1411778/213204726-0772373e-14db-4d5d-9a58-bc249bac4c57.png">
 
@@ -183,6 +189,7 @@ Using the OpenAI Chat API, you can build your own applications with `gpt-3.5-tur
      public let logitBias: [String:Int]?
      /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
      public let user: String?
+}
 ```
 
 **Response**
@@ -213,7 +220,7 @@ struct ChatResult: Codable, Equatable {
 **Example**
 
 ```swift
-let query = ChatQuery(model: .gpt3_5Turbo, messages: [.init(role: "user", content: "who are you")])
+let query = ChatQuery(model: .gpt3_5Turbo, messages: [.init(role: .user, content: "who are you")])
 let result = try await openAI.chats(query: query)
 ```
 
@@ -386,6 +393,70 @@ let result = try await openAI.audioTranslations(query: query)
 
 Review [Audio Documentation](https://platform.openai.com/docs/api-reference/audio) for more info.
 
+### Edits
+
+Creates a new edit for the provided input, instruction, and parameters.
+
+**Request**
+
+```swift
+struct EditsQuery: Codable {
+    /// ID of the model to use.
+    public let model: Model
+    /// Input text to get embeddings for.
+    public let input: String?
+    /// The instruction that tells the model how to edit the prompt.
+    public let instruction: String
+    /// The number of images to generate. Must be between 1 and 10.
+    public let n: Int?
+    /// What sampling temperature to use. Higher values means the model will take more risks. Try 0.9 for more creative applications, and 0 (argmax sampling) for ones with a well-defined answer.
+    public let temperature: Double?
+    /// An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
+    public let topP: Double?
+}
+```
+
+**Response**
+
+```swift
+struct EditsResult: Codable, Equatable {
+    
+    public struct Choice: Codable, Equatable {
+        public let text: String
+        public let index: Int
+    }
+
+    public struct Usage: Codable, Equatable {
+        public let promptTokens: Int
+        public let completionTokens: Int
+        public let totalTokens: Int
+        
+        enum CodingKeys: String, CodingKey {
+            case promptTokens = "prompt_tokens"
+            case completionTokens = "completion_tokens"
+            case totalTokens = "total_tokens"
+        }
+    }
+    
+    public let object: String
+    public let created: TimeInterval
+    public let choices: [Choice]
+    public let usage: Usage
+}
+```
+
+**Example**
+
+```swift
+let query = EditsQuery(model: .gpt4, input: "What day of the wek is it?", instruction: "Fix the spelling mistakes")
+openAI.edits(query: query) { result in
+  //Handle response here
+}
+//or
+let result = try await openAI.edits(query: query)
+```
+
+Review [Edits Documentation](https://platform.openai.com/docs/api-reference/edits) for more info.
 
 ### Embeddings
 
@@ -421,7 +492,7 @@ struct EmbeddingsResult: Codable, Equatable {
 **Example**
 
 ```swift
-let query = EmbeddingsQuery(model: .textSearchBabbadgeDoc, input: "The food was delicious and the waiter...")
+let query = EmbeddingsQuery(model: .textSearchBabbageDoc, input: "The food was delicious and the waiter...")
 openAI.embeddings(query: query) { result in
   //Handle response here
 }
@@ -458,28 +529,43 @@ Models are represented as a typealias `typealias Model = String`.
 
 ```swift
 public extension Model {
-    static let textDavinci_003 = "text-davinci-003"
-    static let textDavinci_002 = "text-davinci-002"
-    static let textDavinci_001 = "text-davinci-001"
-    static let curie = "text-curie-001"
-    static let babbage = "text-babbage-001"
-    static let textSearchBabbadgeDoc = "text-search-babbage-doc-001"
-    static let textSearchBabbageQuery001 = "text-search-babbage-query-001"
-    static let ada = "text-ada-001"
-    static let textEmbeddingAda = "text-embedding-ada-002"
-    static let gpt3_5Turbo = "gpt-3.5-turbo"
-    static let gpt3_5Turbo0301 = "gpt-3.5-turbo-0301"
-    
     static let gpt4 = "gpt-4"
     static let gpt4_0314 = "gpt-4-0314"
     static let gpt4_32k = "gpt-4-32k"
     static let gpt4_32k_0314 = "gpt-4-32k-0314"
+    static let gpt3_5Turbo = "gpt-3.5-turbo"
+    static let gpt3_5Turbo0301 = "gpt-3.5-turbo-0301"
+    
+    static let textDavinci_003 = "text-davinci-003"
+    static let textDavinci_002 = "text-davinci-002"
+    static let textCurie = "text-curie-001"
+    static let textBabbage = "text-babbage-001"
+    static let textAda = "text-ada-001"
+    
+    static let textDavinci_001 = "text-davinci-001"
+    static let codeDavinciEdit_001 = "code-davinci-edit-001"
+    
+    static let whisper_1 = "whisper-1"
+    
+    static let davinci = "davinci"
+    static let curie = "curie"
+    static let babbage = "babbage"
+    static let ada = "ada"
+    
+    static let textEmbeddingAda = "text-embedding-ada-002"
+    static let textSearchAda = "text-search-ada-doc-001"
+    static let textSearchBabbageDoc = "text-search-babbage-doc-001"
+    static let textSearchBabbageQuery001 = "text-search-babbage-query-001"
+    
+    static let textModerationStable = "text-moderation-stable"
+    static let textModerationLatest = "text-moderation-latest"
+    static let moderation = "text-moderation-001"
 }
 ```
 
 GPT-4 models are supported. 
 
-For example to use basic GPT-4 8K model pass `.gpt4` as a paramter.
+For example to use basic GPT-4 8K model pass `.gpt4` as a parameter.
 
 ```swift
 let query = ChatQuery(model: .gpt4, messages: [
@@ -496,12 +582,6 @@ You can also pass a custom string if you need to use some model, that is not rep
 
 Lists the currently available models.
 
-**Request**
-
-```swift
-public struct ModelsQuery: Codable, Equatable { }    
-```
-
 **Response**
 
 ```swift
@@ -515,12 +595,11 @@ public struct ModelsResult: Codable, Equatable {
 **Example**
 
 ```swift
-let query = ModelsQuery()
-openAI.models(query: query) { result in
+openAI.models() { result in
   //Handle result here
 }
 //or
-let result = try await openAI.models(query: query)
+let result = try await openAI.models()
 ```
 
 #### Retrieve Model
@@ -559,6 +638,44 @@ let result = try await openAI.model(query: query)
 ```
 
 Review [Models Documentation](https://platform.openai.com/docs/api-reference/models) for more info.
+
+### Moderations 
+
+Given a input text, outputs if the model classifies it as violating OpenAI's content policy.
+
+**Request**
+
+```swift
+public struct ModerationsQuery: Codable {
+    
+    public let input: String
+    public let model: Model?
+}    
+```
+
+**Response**
+
+```swift
+public struct ModerationsResult: Codable, Equatable {
+
+    public let id: String
+    public let model: Model
+    public let results: [CategoryResult]
+}
+```
+
+**Example**
+
+```swift
+let query = ModerationsQuery(input: "I want to kill them.")
+openAI.moderations(query: query) { result in
+  //Handle result here
+}
+//or
+let result = try await openAI.moderations(query: query)
+```
+
+Review [Moderations Documentation](https://platform.openai.com/docs/api-reference/moderations) for more info.
 
 ### Utilities
 
@@ -600,6 +717,29 @@ print(similarity) //0.9510201910206734
 <img width="574" alt="Screenshot 2022-12-19 at 6 00 33 PM" src="https://user-images.githubusercontent.com/1411778/208467903-000b52d8-6589-40dd-b020-eeed69e8d284.png">
 
 Read more about Cosine Similarity [here](https://en.wikipedia.org/wiki/Cosine_similarity).
+
+### Combine Extensions
+
+The library contains built-in [Combine](https://developer.apple.com/documentation/combine) extensions.
+
+```swift
+func completions(query: CompletionsQuery) -> AnyPublisher<CompletionsResult, Error>
+func images(query: ImagesQuery) -> AnyPublisher<ImagesResult, Error>
+func embeddings(query: EmbeddingsQuery) -> AnyPublisher<EmbeddingsResult, Error>
+func chats(query: ChatQuery) -> AnyPublisher<ChatResult, Error>
+func edits(query: EditsQuery) -> AnyPublisher<EditsResult, Error>
+func model(query: ModelQuery) -> AnyPublisher<ModelResult, Error>
+func models() -> AnyPublisher<ModelsResult, Error>
+func moderations(query: ModerationsQuery) -> AnyPublisher<ModerationsResult, Error>
+func audioTranscriptions(query: AudioTranscriptionQuery) -> AnyPublisher<AudioTranscriptionResult, Error>
+func audioTranslations(query: AudioTranslationQuery) -> AnyPublisher<AudioTranslationResult, Error>
+```
+
+## Example Project
+
+You can find example iOS application in [Demo](/Demo) folder. 
+
+![mockuuups-iphone-13-pro-mockup-perspective-right](https://user-images.githubusercontent.com/1411778/231449395-2ad6bab6-c21f-43dc-8977-f45f505b609d.png)
 
 ## Links
 

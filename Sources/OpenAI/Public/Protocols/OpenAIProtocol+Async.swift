@@ -72,6 +72,21 @@ public extension OpenAIProtocol {
         }
     }
     
+    func edits(
+        query: EditsQuery
+    ) async throws -> EditsResult {
+        try await withCheckedThrowingContinuation { continuation in
+            edits(query: query) { result in
+                switch result {
+                case let .success(success):
+                    return continuation.resume(returning: success)
+                case let .failure(failure):
+                    return continuation.resume(throwing: failure)
+                }
+            }
+        }
+    }
+    
     func model(
         query: ModelQuery
     ) async throws -> ModelResult {
@@ -87,11 +102,24 @@ public extension OpenAIProtocol {
         }
     }
     
-    func models(
-        query: ModelsQuery
-    ) async throws -> ModelsResult {
+    func models() async throws -> ModelsResult {
         try await withCheckedThrowingContinuation { continuation in
-            models(query: query) { result in
+            models() { result in
+                switch result {
+                case let .success(success):
+                    return continuation.resume(returning: success)
+                case let .failure(failure):
+                    return continuation.resume(throwing: failure)
+                }
+            }
+        }
+    }
+    
+    func moderations(
+        query: ModerationsQuery
+    ) async throws -> ModerationsResult {
+        try await withCheckedThrowingContinuation { continuation in
+            moderations(query: query) { result in
                 switch result {
                 case let .success(success):
                     return continuation.resume(returning: success)

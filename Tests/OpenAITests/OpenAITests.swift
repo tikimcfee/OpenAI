@@ -43,15 +43,6 @@ class OpenAITests: XCTestCase {
         XCTAssertEqual(inError, apiError)
     }
     
-    func testImagesError() async throws {
-        let query = ImagesQuery(prompt: "White cat with heterochromia sitting on the kitchen table", n: 1, size: "1024x1024")
-        let inError = APIError(message: "foo", type: "bar", param: "baz", code: "100")
-        self.stub(error: inError)
-        
-        let apiError: APIError = try await XCTExpectError { try await openAI.images(query: query) }
-        XCTAssertEqual(inError, apiError)
-    }
-
     func testImages() async throws {
         let query = ImagesQuery(prompt: "White cat with heterochromia sitting on the kitchen table", n: 1, size: "1024x1024")
         let imagesResult = ImagesResult(created: 100, data: [
@@ -62,15 +53,24 @@ class OpenAITests: XCTestCase {
         XCTAssertEqual(result, imagesResult)
     }
     
+    func testImagesError() async throws {
+        let query = ImagesQuery(prompt: "White cat with heterochromia sitting on the kitchen table", n: 1, size: "1024x1024")
+        let inError = APIError(message: "foo", type: "bar", param: "baz", code: "100")
+        self.stub(error: inError)
+        
+        let apiError: APIError = try await XCTExpectError { try await openAI.images(query: query) }
+        XCTAssertEqual(inError, apiError)
+    }
+    
     func testChats() async throws {
        let query = ChatQuery(model: .gpt4, messages: [
            .init(role: .system, content: "You are Librarian-GPT. You know everything about the books."),
            .init(role: .user, content: "Who wrote Harry Potter?")
        ])
        let chatResult = ChatResult(id: "id-12312", object: "foo", created: 100, model: .gpt3_5Turbo, choices: [
-           .init(index: 0, message: .init(role: "foo", content: "bar"), finishReason: "baz"),
-           .init(index: 0, message: .init(role: "foo1", content: "bar1"), finishReason: "baz1"),
-           .init(index: 0, message: .init(role: "foo2", content: "bar2"), finishReason: "baz2")
+        .init(index: 0, message: .init(role: .system, content: "bar"), finishReason: "baz"),
+        .init(index: 0, message: .init(role: .user, content: "bar1"), finishReason: "baz1"),
+        .init(index: 0, message: .init(role: .assistant, content: "bar2"), finishReason: "baz2")
         ], usage: .init(promptTokens: 100, completionTokens: 200, totalTokens: 300))
        try self.stub(result: chatResult)
         
@@ -90,13 +90,33 @@ class OpenAITests: XCTestCase {
         XCTAssertEqual(inError, apiError)
     }
     
+    func testEdits() async throws {
+        let query = EditsQuery(model: .gpt4, input: "What day of the wek is it?", instruction: "Fix the spelling mistakes")
+        let editsResult = EditsResult(object: "edit", created: 1589478378, choices: [
+            .init(text: "What day of the week is it?", index: 0)
+        ], usage: .init(promptTokens: 25, completionTokens: 32, totalTokens: 57))
+        try self.stub(result: editsResult)
+        
+        let result = try await openAI.edits(query: query)
+        XCTAssertEqual(result, editsResult)
+    }
+    
+    func testEditsError() async throws {
+        let query = EditsQuery(model: .gpt4, input: "What day of the wek is it?", instruction: "Fix the spelling mistakes")
+        let inError = APIError(message: "foo", type: "bar", param: "baz", code: "100")
+        self.stub(error: inError)
+
+        let apiError: APIError = try await XCTExpectError { try await openAI.edits(query: query) }
+        XCTAssertEqual(inError, apiError)
+    }
+    
     func testEmbeddings() async throws {
-        let query = EmbeddingsQuery(model: .textSearchBabbadgeDoc, input: "The food was delicious and the waiter...")
+        let query = EmbeddingsQuery(model: .textSearchBabbageDoc, input: "The food was delicious and the waiter...")
         let embeddingsResult = EmbeddingsResult(data: [
             .init(object: "id-sdasd", embedding: [0.1, 0.2, 0.3, 0.4], index: 0),
             .init(object: "id-sdasd1", embedding: [0.4, 0.1, 0.7, 0.1], index: 1),
             .init(object: "id-sdasd2", embedding: [0.8, 0.1, 0.2, 0.8], index: 2)
-        ], usage: .init(promptTokens: 10, totalTokens: 10))
+        ], model: .textSearchBabbageDoc, usage: .init(promptTokens: 10, totalTokens: 10))
         try self.stub(result: embeddingsResult)
         
         let result = try await openAI.embeddings(query: query)
@@ -104,7 +124,7 @@ class OpenAITests: XCTestCase {
     }
     
     func testEmbeddingsError() async throws {
-        let query = EmbeddingsQuery(model: .textSearchBabbadgeDoc, input: "The food was delicious and the waiter...")
+        let query = EmbeddingsQuery(model: .textSearchBabbageDoc, input: "The food was delicious and the waiter...")
         let inError = APIError(message: "foo", type: "bar", param: "baz", code: "100")
         self.stub(error: inError)
 
@@ -137,7 +157,6 @@ class OpenAITests: XCTestCase {
     }
     
     func testListModels() async throws {
-        let query = ModelsQuery()
         let listModelsResult = ModelsResult(data: [
             .init(id: "model-id-0", object: "model", ownedBy: "organization-owner"),
             .init(id: "model-id-1", object: "model", ownedBy: "organization-owner"),
@@ -145,16 +164,37 @@ class OpenAITests: XCTestCase {
         ], object: "list")
         try self.stub(result: listModelsResult)
         
-        let result = try await openAI.models(query: query)
+        let result = try await openAI.models()
         XCTAssertEqual(result, listModelsResult)
     }
     
     func testListModelsError() async throws {
-        let query = ModelsQuery()
         let inError = APIError(message: "foo", type: "bar", param: "baz", code: "100")
         self.stub(error: inError)
         
-        let apiError: APIError = try await XCTExpectError { try await openAI.models(query: query) }
+        let apiError: APIError = try await XCTExpectError { try await openAI.models() }
+        XCTAssertEqual(inError, apiError)
+    }
+    
+    func testModerations() async throws {
+        let query = ModerationsQuery(input: "Hello, world!")
+        let moderationsResult = ModerationsResult(id: "foo", model: .moderation, results: [
+            .init(categories: .init(hate: false, hateThreatening: false, selfHarm: false, sexual: false, sexualMinors: false, violence: false, violenceGraphic: false),
+                  categoryScores: .init(hate: 0.1, hateThreatening: 0.1, selfHarm: 0.1, sexual: 0.1, sexualMinors: 0.1, violence: 0.1, violenceGraphic: 0.1),
+                  flagged: false)
+        ])
+        try self.stub(result: moderationsResult)
+        
+        let result = try await openAI.moderations(query: query)
+        XCTAssertEqual(result, moderationsResult)
+    }
+    
+    func testModerationsError() async throws {
+        let query = ModerationsQuery(input: "Hello, world!")
+        let inError = APIError(message: "foo", type: "bar", param: "baz", code: "100")
+        self.stub(error: inError)
+        
+        let apiError: APIError = try await XCTExpectError { try await openAI.moderations(query: query) }
         XCTAssertEqual(inError, apiError)
     }
     

@@ -7,23 +7,19 @@
 
 import Foundation
 
-public struct Chat: Codable, Equatable, Hashable {
-    public let role: String
+public struct Chat: Codable, Equatable {
+    public let role: Role
     public let content: String
     
-    public enum Role: String {
+    public enum Role: String, Codable, Equatable {
         case system
         case assistant
         case user
     }
-    
-    public init(role: String, content: String) {
+
+    public init(role: Role, content: String) {
         self.role = role
         self.content = content
-    }
-    
-    public init(role: Role, content: String) {
-        self.init(role: role.rawValue, content: content)
     }
 }
 
@@ -82,5 +78,4 @@ public struct ChatQuery: Codable {
         self.logitBias = logitBias
         self.user = user
     }
-    
 }
