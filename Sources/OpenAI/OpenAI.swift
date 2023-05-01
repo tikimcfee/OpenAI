@@ -161,7 +161,7 @@ extension OpenAI {
     }
 }
 
-enum StreamStopError: Error {
+public enum StreamStopError: Error {
     case streamStop
 }
 
