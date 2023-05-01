@@ -151,6 +151,7 @@ extension OpenAI {
             }
             session.onComplete = { [weak self] object, error in
                 self?.streamingSessions.removeAll(where: { $0 == object })
+                completion(.failure(StreamStopError.streamStop))
             }
             session.perform()
             streamingSessions.append(session)
@@ -158,6 +159,10 @@ extension OpenAI {
             completion(.failure(error))
         }
     }
+}
+
+enum StreamStopError: Error {
+    case streamStop
 }
 
 extension OpenAI {

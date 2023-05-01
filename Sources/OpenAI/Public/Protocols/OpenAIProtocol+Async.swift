@@ -76,7 +76,11 @@ public extension OpenAIProtocol {
         query: ChatQuery
     ) -> AsyncThrowingStream<ChatResult, Error> {
         return AsyncThrowingStream { continuation in
-            return chats(query: query) { continuation.yield(with: $0) }
+            return chats(query: query) { result in
+                continuation.yield(with: result)
+                
+                
+            }
         }
     }
     
