@@ -13,6 +13,11 @@ public struct ChatResult: Codable, Equatable, Hashable {
         public struct Delta: Codable, Equatable, Hashable {
             public let content: String?
             public let role: Chat.Role?
+            
+            public init(content: String?, role: Chat.Role?) {
+                self.content = content
+                self.role = role
+            }
         }
         
         public let index: Int
@@ -28,6 +33,13 @@ public struct ChatResult: Codable, Equatable, Hashable {
             case message
             case delta
             case finishReason = "finish_reason"
+        }
+        
+        public init(index: Int, message: Chat? = nil, delta: Delta? = nil, finishReason: String?) {
+            self.index = index
+            self.message = message
+            self.delta = delta
+            self.finishReason = finishReason
         }
     }
     
@@ -59,7 +71,7 @@ public struct ChatResult: Codable, Equatable, Hashable {
         case usage
     }
     
-    init(id: String, object: String, created: TimeInterval, model: Model, choices: [Choice], usage: Usage) {
+    public init(id: String, object: String, created: TimeInterval, model: Model, choices: [Choice], usage: Usage) {
         self.id = id
         self.object = object
         self.created = created
