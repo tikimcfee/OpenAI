@@ -17,9 +17,9 @@ public struct ChatResult: Codable, Equatable, Hashable {
         
         public let index: Int
         /// Exists only if it is a complete message.
-        public let message: Chat?
+        public var message: Chat?
         /// Exists only if it is a partial message obtained throught a streaming query.
-        public let delta: Delta?
+        public var delta: Delta?
         /// Exists only if it is a complete message.
         public let finishReason: String?
         
@@ -47,7 +47,7 @@ public struct ChatResult: Codable, Equatable, Hashable {
     public let object: String
     public let created: TimeInterval
     public let model: Model
-    public let choices: [Choice]
+    public var choices: [Choice]
     public let usage: Usage?
     
     enum CodingKeys: String, CodingKey {

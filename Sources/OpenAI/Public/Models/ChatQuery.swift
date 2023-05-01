@@ -9,7 +9,7 @@ import Foundation
 
 public struct Chat: Codable, Equatable, Hashable {
     public let role: Role
-    public let content: String
+    public var content: String
     
     public enum Role: String, Codable, Equatable, Hashable {
         case system
