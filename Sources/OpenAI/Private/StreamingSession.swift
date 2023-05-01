@@ -58,6 +58,7 @@ final class StreamingSession<ResultType: Codable>: NSObject, Identifiable, URLSe
         }
         jsonObjects.forEach { jsonContent  in
             guard jsonContent != streamingCompletionMarker else {
+                onComplete?(self, nil)
                 return
             }
             guard let jsonData = jsonContent.data(using: .utf8) else {
