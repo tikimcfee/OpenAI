@@ -53,6 +53,12 @@ public struct ChatResult: Codable, Equatable, Hashable {
             case completionTokens = "completion_tokens"
             case totalTokens = "total_tokens"
         }
+        
+        public init(promptTokens: Int = 0, completionTokens: Int = 0, totalTokens: Int = 0) {
+            self.promptTokens = promptTokens
+            self.completionTokens = completionTokens
+            self.totalTokens = totalTokens
+        }
     }
     
     public let id: String
