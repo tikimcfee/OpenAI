@@ -65,12 +65,22 @@ final class StreamingSession<ResultType: Codable>: NSObject, Identifiable, URLSe
                 onProcessingError?(self, StreamingError.unknownContent)
                 return
             }
+            
+            var apiError: Error? = nil
             do {
-                let decoder = JSONDecoder()
-                let object = try decoder.decode(ResultType.self, from: jsonData)
-                onReceiveContent?(self, object)
+                let decoded = try JSONDecoder().decode(ResultType.self, from: jsonData)
+                onReceiveContent?(self, decoded)
             } catch {
-                onProcessingError?(self, error)
+                apiError = error
+            }
+
+            if let apiError = apiError {
+                do {
+                    let decoded = try JSONDecoder().decode(APIErrorResponse.self, from: data)
+                    onProcessingError?(self, decoded)
+                } catch {
+                    onProcessingError?(self, apiError)
+                }
             }
         }
     }
